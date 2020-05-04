@@ -255,7 +255,8 @@ abstract class BaseChart<D> {
   ///
   /// [selectionModelType] specifies the type of the selection model to use.
   List<DatumDetails<D>> getSelectedDatumDetails(
-      SelectionModelType selectionModelType) {
+      SelectionModelType selectionModelType,
+      {String seriesId}) {
     final details = <DatumDetails<D>>[];
 
     if (_currentSeriesList == null) {
@@ -270,6 +271,10 @@ abstract class BaseChart<D> {
     // Pass each selected datum to the appropriate series renderer to get full
     // details appropriate to its series type.
     for (SeriesDatum<D> seriesDatum in selectionModel.selectedDatum) {
+      if (seriesId != null && seriesDatum.series.id != seriesId) {
+        continue;
+      }
+
       final rendererId = seriesDatum.series.getAttr(rendererIdKey);
       details.add(
           getSeriesRenderer(rendererId).getDetailsForSeriesDatum(seriesDatum));
