@@ -16,6 +16,7 @@
 import 'dart:collection' show LinkedHashMap;
 import 'dart:math' show max, min, Point, Rectangle;
 
+import 'package:charts_common/common.dart';
 import 'package:meta/meta.dart';
 
 import '../../../common/color.dart' show Color;
@@ -96,6 +97,8 @@ class LinePointHighlighter<D> implements ChartBehavior<D> {
   /// Renderer used to draw the highlighted points.
   final SymbolRenderer symbolRenderer;
 
+  SelectionModel _selectionModel;
+
   BaseChart<D> _chart;
 
   _LinePointLayoutView _view;
@@ -174,14 +177,19 @@ class LinePointHighlighter<D> implements ChartBehavior<D> {
   }
 
   void _selectionChanged(SelectionModel selectionModel) {
+    _selectionModel = selectionModel;
     _chart.redraw(skipLayout: true, skipAnimation: true);
   }
 
   void _updateViewData() {
     _currentKeys.clear();
 
-    final selectedDatumDetails =
-        _chart.getSelectedDatumDetails(selectionModelType);
+    final selectedSeries = _selectionModel?.selectedSeries?.first;
+
+    final selectedDatumDetails = _chart.getSelectedDatumDetails(
+      selectionModelType,
+      seriesId: selectedSeries?.id,
+    );
 
     // Create a new map each time to ensure that we have it sorted in the
     // selection model order. This preserves the "nearestDetail" ordering, so
@@ -260,7 +268,24 @@ class LinePointHighlighter<D> implements ChartBehavior<D> {
 
     // Animate out points that don't exist anymore.
     _seriesPointMap.forEach((String key, _AnimatedPoint<D> point) {
-      if (_currentKeys.contains(point.key) != true) {
+      ChartBehavior<D> seriesLegend = _chart.behaviors.firstWhere((behavior) {
+        return (behavior is SeriesLegend);
+      }, orElse: () {
+        return null;
+      });
+
+      // print(
+      //     '--- seriesLegend is SeriesLegend: ${seriesLegend is SeriesLegend} ---');
+      bool isSeriesHidden = false;
+
+      if (seriesLegend is SeriesLegend) {
+        isSeriesHidden = (seriesLegend as SeriesLegend)
+            .isSeriesHidden(point.key.split('::')[0]);
+        // print('--- point.key: ${point.key} ---');
+        // print('--- isSeriesHidden: ${isSeriesHidden} ---');
+      }
+
+      if (isSeriesHidden || _currentKeys.contains(point.key) != true) {
         point.animateOut();
         newSeriesMap[point.key] = point;
       }
