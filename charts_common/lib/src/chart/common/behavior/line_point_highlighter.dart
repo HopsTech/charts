@@ -268,24 +268,7 @@ class LinePointHighlighter<D> implements ChartBehavior<D> {
 
     // Animate out points that don't exist anymore.
     _seriesPointMap.forEach((String key, _AnimatedPoint<D> point) {
-      ChartBehavior<D> seriesLegend = _chart.behaviors.firstWhere((behavior) {
-        return (behavior is SeriesLegend);
-      }, orElse: () {
-        return null;
-      });
-
-      // print(
-      //     '--- seriesLegend is SeriesLegend: ${seriesLegend is SeriesLegend} ---');
-      bool isSeriesHidden = false;
-
-      if (seriesLegend is SeriesLegend) {
-        isSeriesHidden = (seriesLegend as SeriesLegend)
-            .isSeriesHidden(point.key.split('::')[0]);
-        // print('--- point.key: ${point.key} ---');
-        // print('--- isSeriesHidden: ${isSeriesHidden} ---');
-      }
-
-      if (isSeriesHidden || _currentKeys.contains(point.key) != true) {
+      if (_currentKeys.contains(point.key) != true) {
         point.animateOut();
         newSeriesMap[point.key] = point;
       }
@@ -372,7 +355,7 @@ class _LinePointLayoutView<D> extends LayoutView {
       final keysToRemove = <String>[];
 
       _seriesPointMap.forEach((String key, _AnimatedPoint<D> point) {
-        if (point.animatingOut) {
+        if (_isSeriesHidden(key) || point.animatingOut) {
           keysToRemove.add(key);
         }
       });
@@ -521,7 +504,10 @@ class _LinePointLayoutView<D> extends LayoutView {
 
     // Draw the highlight shapes on top of all follow lines.
     for (_PointRendererElement<D> pointElement in points) {
-      if (pointElement.point.x == null || pointElement.point.y == null) {
+      if (pointElement.point.x == null ||
+          pointElement.point.y == null ||
+          pointElement.point.x < drawBounds.left ||
+          pointElement.point.x > drawBounds.right) {
         continue;
       }
 
@@ -538,6 +524,23 @@ class _LinePointLayoutView<D> extends LayoutView {
           strokeColor: pointElement.color,
           strokeWidthPx: pointElement.strokeWidthPx);
     }
+  }
+
+  bool _isSeriesHidden(String series) {
+    bool isSeriesHidden = false;
+
+    ChartBehavior<D> seriesLegend = chart.behaviors.firstWhere(
+        (behavior) => (behavior is SeriesLegend),
+        orElse: () => null);
+
+    try {
+      if (seriesLegend is SeriesLegend) {
+        isSeriesHidden = (seriesLegend as SeriesLegend)
+            .isSeriesHidden(series.split('::')[0]);
+      }
+    } catch (_) {}
+
+    return isSeriesHidden;
   }
 
   @override
