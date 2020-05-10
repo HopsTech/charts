@@ -177,6 +177,7 @@ export 'src/behaviors/legend/legend_entry_layout.dart'
     show LegendEntryLayout, SimpleLegendEntryLayout;
 export 'src/behaviors/legend/legend_layout.dart'
     show LegendLayout, TabularLegendLayout;
+export 'src/behaviors/legend/legend.dart' show TappableLegend;
 export 'src/behaviors/legend/series_legend.dart' show SeriesLegend;
 export 'src/behaviors/line_point_highlighter.dart' show LinePointHighlighter;
 export 'src/behaviors/range_annotation.dart' show RangeAnnotation;
